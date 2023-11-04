@@ -82,7 +82,7 @@ public class WebSecurityConfig {
         http.apply(WebAuthnLoginConfigurer.webAuthnLogin())
             .defaultSuccessUrl("/", true)
             .failureHandler((request, response, exception) -> {
-                logger.error("Sending 401 Unauthorized error");
+                logger.error("Login error", exception);
                 response.sendRedirect("/login?error=Login failed: " + exception.getMessage());
             })
             .attestationOptionsEndpoint()
