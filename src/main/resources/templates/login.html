@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+
+<head th:insert="~{fragments.html :: header}"></head>
+
+<body class="d-flex align-items-center py-4 bg-body-tertiary">
+    <main class="form-signin w-100 m-auto">
+        <div class="alert alert-success" role="alert" th:text="${successMessage}" th:if="${successMessage}"></div>
+        <div class="alert alert-danger" role="alert" th:text="${param.error}" th:if="${param.error}"></div>
+        <form th:action="@{/login}" method="post" id="login-form">
+            <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+            <button id="login" class="btn btn-primary w-100 py-2" type="submit">Sign in with passkey</button>
+            <p />
+            <p>If you don't have an account, <a href="/signup">create one now</a></p>
+            <input id="credentialId" name="credentialId" type="hidden" />
+            <input id="clientDataJSON" name="clientDataJSON" type="hidden" />
+            <input id="authenticatorData" name="authenticatorData" type="hidden" />
+            <input id="signature" name="signature" type="hidden" />
+            <input id="clientExtensions" name="clientExtensions" type="hidden" />
+        </form>
+
+    </main>
+    <script th:src="@{/js/base64url.js}"></script>
+    <script>
+        // Availability of `window.PublicKeyCredential` means WebAuthn is usable.
+        if (!window.PublicKeyCredential) {
+            window.alert("WebAuthn not supported by this browser");
+        } else {
+            // Login
+            document.getElementById("login-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                try {
+                    const options = await fetch("/webauthn/assertion/options");
+                    const { rpId, challenge, extensions, timeout } = await options.json();
+
+                    let crOptions = {
+                        challenge: decodeBase64url(challenge),
+                        rpId,
+                        timeout,
+                        userVerification: "preferred",
+                        extensions,
+                    };
+
+                    const credential = await navigator.credentials.get({
+                        publicKey: crOptions,
+                    });
+                    console.log("Credential: ", credential);
+
+                    document.getElementById("credentialId").value = credential.id;
+                    document.getElementById("clientDataJSON").value = encodeBase64url(credential.response.clientDataJSON);
+                    document.getElementById("authenticatorData").value = encodeBase64url(credential.response.authenticatorData);
+                    document.getElementById("signature").value = encodeBase64url(credential.response.signature);
+                    document.getElementById("clientExtensions").value = JSON.stringify(credential.getClientExtensionResults());
+                    document.getElementById("login-form").submit();
+                } catch (error) {
+                    console.error("Error:%s, Message:%s", error.name, error.message);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+
+<head th:insert="~{fragments.html :: header}"></head>
+
+<body class="d-flex align-items-center py-4 bg-body-tertiary">
+    <main class="form-signin w-100 m-auto">
+        <div class="alert alert-success" role="alert" th:text="${successMessage}" th:if="${successMessage}"></div>
+        <div class="alert alert-danger" role="alert" th:text="${param.error}" th:if="${param.error}"></div>
+        <div class="alert alert-success" role="alert">Login successful. You are authenticated.</div>
+        <p th:text="${details}"></p>
+        <form th:action="@{/logout}" method="post">
+            <button class="btn btn-danger w-100 py-2" type="submit" value="webAuthnLogin">Logout</button>
+        </form>
+    </main>
+</body>
+
+</html>
