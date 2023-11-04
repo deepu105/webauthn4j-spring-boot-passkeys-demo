@@ -10,7 +10,7 @@
             <p>Register a new account</p>
             <input id="userHandle" name="userHandle" th:field="*{userHandle}" type="hidden" />
             <div class="form-floating">
-                <input type="email" class="form-control" id="username" placeholder="name@example.com" required>
+                <input type="email" class="form-control" id="username" th:field="*{username}"  placeholder="name@example.com" required>
                 <label for="username">Email address</label>
             </div>
             <button class="btn btn-info w-100 py-2" type="submit">Register a new passkey</button>

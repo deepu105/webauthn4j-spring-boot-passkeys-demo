@@ -16,10 +16,8 @@
 
 package com.example.demo.web;
 
-import com.webauthn4j.data.client.challenge.Challenge;
 import com.webauthn4j.springframework.security.WebAuthnRegistrationRequestValidationResponse;
 import com.webauthn4j.springframework.security.WebAuthnRegistrationRequestValidator;
-import com.webauthn4j.springframework.security.authenticator.WebAuthnAuthenticator;
 import com.webauthn4j.springframework.security.authenticator.WebAuthnAuthenticatorImpl;
 import com.webauthn4j.springframework.security.authenticator.WebAuthnAuthenticatorManager;
 import com.webauthn4j.springframework.security.challenge.ChallengeRepository;
@@ -35,8 +33,10 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -76,19 +76,22 @@ public class WebAuthnSampleController {
     @Autowired
     private ChallengeRepository challengeRepository;
 
+    @Autowired
+    private UserDetailsManager userDetailsManager;
+
     private AuthenticationTrustResolver authenticationTrustResolver = new AuthenticationTrustResolverImpl();
 
     @ModelAttribute
     public void addAttributes(Model model, HttpServletRequest request) {
-        Challenge challenge = challengeRepository.loadOrGenerateChallenge(request);
+        var challenge = challengeRepository.loadOrGenerateChallenge(request);
         model.addAttribute("webAuthnChallenge", Base64UrlUtil.encodeToString(challenge.getValue()));
         model.addAttribute("webAuthnCredentialIds", getCredentialIds());
     }
 
     @GetMapping(value = "/")
     public String index(Model model) {
-        var details = SecurityContextHolder.getContext().getAuthentication().getDetails();
-        model.addAttribute("details", details);
+        var user = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        model.addAttribute("user", user);
         return VIEW_HOME;
     }
 
@@ -99,8 +102,8 @@ public class WebAuthnSampleController {
 
     @GetMapping(value = "/signup")
     public String template(Model model) {
-        UserCreateForm userCreateForm = new UserCreateForm();
-        String userHandle = Base64UrlUtil.encodeToString(UUIDUtil.convertUUIDToBytes(UUID.randomUUID()));
+        var userCreateForm = new UserCreateForm();
+        var userHandle = Base64UrlUtil.encodeToString(UUIDUtil.convertUUIDToBytes(UUID.randomUUID()));
         userCreateForm.setUserHandle(userHandle);
         model.addAttribute("userForm", userCreateForm);
         return VIEW_SIGNUP;
@@ -132,9 +135,15 @@ public class WebAuthnSampleController {
                 return VIEW_SIGNUP;
             }
 
-            String username = userCreateForm.getUsername();
+            var username = userCreateForm.getUsername();
 
-            WebAuthnAuthenticator authenticator = new WebAuthnAuthenticatorImpl(
+            List<GrantedAuthority> authorities = Collections.emptyList();
+
+            // we create a user with dummy password.
+            // This is not required for this demo but in real use cases might be needed
+            var user = new User(username, "dummy", authorities);
+
+            var authenticator = new WebAuthnAuthenticatorImpl(
                 "authenticator",
                 username,
                 registrationRequestValidationResponse.getAttestationObject().getAuthenticatorData().getAttestedCredentialData(),
@@ -146,6 +155,7 @@ public class WebAuthnSampleController {
             );
 
             try {
+                userDetailsManager.createUser(user);
                 webAuthnAuthenticatorManager.createAuthenticator(authenticator);
             } catch (IllegalArgumentException ex) {
                 model.addAttribute("errorMessage", "Registration failed. The user may already be registered.");
@@ -163,13 +173,13 @@ public class WebAuthnSampleController {
     }
 
     private List<String> getCredentialIds() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal = authentication.getPrincipal();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var principal = authentication.getPrincipal();
         if (principal == null || authenticationTrustResolver.isAnonymous(authentication)) {
             return Collections.emptyList();
         } else {
             try {
-                List<WebAuthnAuthenticator> webAuthnAuthenticators = webAuthnAuthenticatorManager.loadAuthenticatorsByUserPrincipal(principal);
+                var webAuthnAuthenticators = webAuthnAuthenticatorManager.loadAuthenticatorsByUserPrincipal(principal);
                 return webAuthnAuthenticators.stream()
                     .map(webAuthnAuthenticator -> Base64UrlUtil.encodeToString(webAuthnAuthenticator.getAttestedCredentialData().getCredentialId()))
                     .collect(Collectors.toList());

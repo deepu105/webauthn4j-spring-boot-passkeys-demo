@@ -137,9 +137,9 @@ public class WebSecurityConfig {
     }
 
     private WebExpressionAuthorizationManager getWebExpressionAuthorizationManager(final String expression) {
-        DefaultHttpSecurityExpressionHandler expressionHandler = new DefaultHttpSecurityExpressionHandler();
+        var expressionHandler = new DefaultHttpSecurityExpressionHandler();
         expressionHandler.setApplicationContext(applicationContext);
-        WebExpressionAuthorizationManager authorizationManager = new WebExpressionAuthorizationManager(expression);
+        var authorizationManager = new WebExpressionAuthorizationManager(expression);
         authorizationManager.setExpressionHandler(expressionHandler);
         return authorizationManager;
     }

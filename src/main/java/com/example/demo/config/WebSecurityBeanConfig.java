@@ -34,9 +34,16 @@ import com.webauthn4j.springframework.security.server.ServerPropertyProvider;
 import com.webauthn4j.springframework.security.server.ServerPropertyProviderImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 
 @Configuration
 public class WebSecurityBeanConfig {
+
+    @Bean
+    public UserDetailsManager userDetailsManager(){
+        return new InMemoryUserDetailsManager();
+    }
 
     @Bean
     public WebAuthnAuthenticatorManager webAuthnAuthenticatorManager() {
@@ -45,10 +52,10 @@ public class WebSecurityBeanConfig {
 
     @Bean
     public ObjectConverter objectConverter() {
-        ObjectMapper jsonMapper = new ObjectMapper();
+        var jsonMapper = new ObjectMapper();
         jsonMapper.registerModule(new WebAuthnMetadataJSONModule());
         jsonMapper.registerModule(new WebAuthn4JSpringSecurityJSONModule());
-        ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
+        var cborMapper = new ObjectMapper(new CBORFactory());
         return new ObjectConverter(jsonMapper, cborMapper);
     }
 

@@ -7,8 +7,10 @@
     <main class="form-signin w-100 m-auto">
         <div class="alert alert-success" role="alert" th:text="${successMessage}" th:if="${successMessage}"></div>
         <div class="alert alert-danger" role="alert" th:text="${param.error}" th:if="${param.error}"></div>
-        <div class="alert alert-success" role="alert">Login successful. You are authenticated.</div>
-        <p th:text="${details}"></p>
+        <div class="alert alert-success" role="alert">Login successful.</div>
+        <p></p>
+        <p th:text="'Greetings, ' + ${user} + ', you are authenticated with passkeys.'" />
+        <p></p>
         <form th:action="@{/logout}" method="post">
             <button class="btn btn-danger w-100 py-2" type="submit" value="webAuthnLogin">Logout</button>
         </form>
