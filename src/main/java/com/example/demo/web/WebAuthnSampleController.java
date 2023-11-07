@@ -33,10 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -59,10 +56,6 @@ public class WebAuthnSampleController {
 
     private final Log logger = LogFactory.getLog(getClass());
 
-    private static final String REDIRECT_LOGIN = "redirect:/login";
-
-    private static final String VIEW_SIGNUP = "signup";
-
     private static final String VIEW_HOME = "home";
 
     private static final String VIEW_LOGIN = "login";
@@ -75,9 +68,6 @@ public class WebAuthnSampleController {
 
     @Autowired
     private ChallengeRepository challengeRepository;
-
-    @Autowired
-    private UserDetailsManager userDetailsManager;
 
     private AuthenticationTrustResolver authenticationTrustResolver = new AuthenticationTrustResolverImpl();
 
@@ -96,17 +86,12 @@ public class WebAuthnSampleController {
     }
 
     @GetMapping(value = "/login")
-    public String login() {
-        return VIEW_LOGIN;
-    }
-
-    @GetMapping(value = "/signup")
     public String template(Model model) {
         var userCreateForm = new UserCreateForm();
         var userHandle = Base64UrlUtil.encodeToString(UUIDUtil.convertUUIDToBytes(UUID.randomUUID()));
         userCreateForm.setUserHandle(userHandle);
         model.addAttribute("userForm", userCreateForm);
-        return VIEW_SIGNUP;
+        return VIEW_LOGIN;
     }
 
     @PostMapping(value = "/signup")
@@ -117,7 +102,7 @@ public class WebAuthnSampleController {
                 model.addAttribute("errorMessage", "Your input needs correction.");
                 logger.error("User input validation failed.");
 
-                return VIEW_SIGNUP;
+                return VIEW_LOGIN;
             }
 
             WebAuthnRegistrationRequestValidationResponse registrationRequestValidationResponse;
@@ -132,16 +117,10 @@ public class WebAuthnSampleController {
             } catch (WebAuthnException | WebAuthnAuthenticationException e) {
                 model.addAttribute("errorMessage", "Authenticator registration request validation failed. Please try again.");
                 logger.error("WebAuthn registration request validation failed.", e);
-                return VIEW_SIGNUP;
+                return VIEW_LOGIN;
             }
 
             var username = userCreateForm.getUsername();
-
-            List<GrantedAuthority> authorities = Collections.emptyList();
-
-            // we create a user with dummy password.
-            // This is not required for this demo but in real use cases might be needed
-            var user = new User(username, "dummy", authorities);
 
             var authenticator = new WebAuthnAuthenticatorImpl(
                 "authenticator",
@@ -155,21 +134,20 @@ public class WebAuthnSampleController {
             );
 
             try {
-                userDetailsManager.createUser(user);
                 webAuthnAuthenticatorManager.createAuthenticator(authenticator);
             } catch (IllegalArgumentException ex) {
                 model.addAttribute("errorMessage", "Registration failed. The user may already be registered.");
                 logger.error("Registration failed.", ex);
-                return VIEW_SIGNUP;
+                return VIEW_LOGIN;
             }
         } catch (RuntimeException ex) {
             model.addAttribute("errorMessage", "Registration failed by unexpected error.");
             logger.error("Registration failed.", ex);
-            return VIEW_SIGNUP;
+            return VIEW_LOGIN;
         }
 
-        redirectAttributes.addFlashAttribute("successMessage", "User registration successful. Please login.");
-        return REDIRECT_LOGIN;
+        model.addAttribute("successMessage", "User registration successful. Please login.");
+        return VIEW_LOGIN;
     }
 
     private List<String> getCredentialIds() {

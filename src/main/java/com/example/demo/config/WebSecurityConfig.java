@@ -114,7 +114,6 @@ public class WebSecurityConfig {
         // Authorization
         http.authorizeHttpRequests(authz -> authz
             .requestMatchers(HttpMethod.GET, "/login").permitAll()
-            .requestMatchers(HttpMethod.GET, "/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/signup").permitAll()
             .anyRequest().access(getWebExpressionAuthorizationManager("@webAuthnSecurityExpression.isWebAuthnAuthenticated(authentication)"))
         );
