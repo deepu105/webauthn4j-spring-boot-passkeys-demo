@@ -32,7 +32,8 @@
             <input id="clientExtensions" name="clientExtensions" th:field="*{clientExtensions}" type="hidden" />
         </form>
     </main>
-    <script th:src="@{/js/base64url.js}"></script>
+    <script src="https://unpkg.com/base64url-arraybuffer"></script>
+
     <script>
         // Availability of `window.PublicKeyCredential` means WebAuthn is usable.
         if (!window.PublicKeyCredential) {
@@ -46,7 +47,7 @@
                     const { rpId, challenge, extensions, timeout } = await options.json();
 
                     let crOptions = {
-                        challenge: decodeBase64url(challenge),
+                        challenge: base64url.decode(challenge, true),
                         rpId,
                         timeout,
                         userVerification: "preferred",
@@ -59,9 +60,9 @@
                     console.log("Credential: ", credential);
 
                     document.getElementById("credentialId").value = credential.id;
-                    document.getElementById("loginClientDataJSON").value = encodeBase64url(credential.response.clientDataJSON);
-                    document.getElementById("authenticatorData").value = encodeBase64url(credential.response.authenticatorData);
-                    document.getElementById("signature").value = encodeBase64url(credential.response.signature);
+                    document.getElementById("loginClientDataJSON").value = base64url.encode(credential.response.clientDataJSON);
+                    document.getElementById("authenticatorData").value = base64url.encode(credential.response.authenticatorData);
+                    document.getElementById("signature").value = base64url.encode(credential.response.signature);
                     document.getElementById("loginClientExtensions").value = JSON.stringify(credential.getClientExtensionResults());
                     document.getElementById("login-form").submit();
                 } catch (error) {
@@ -81,15 +82,15 @@
 
                     let ccOptions = {
                         ...options,
-                        challenge: decodeBase64url(options.challenge),
+                        challenge: base64url.decode(options.challenge, true),
                         user: {
-                            id: decodeBase64url(userHandle),
+                            id: base64url.decode(userHandle, true),
                             name: username,
                             displayName: username,
                         },
                         excludeCredentials: options.excludeCredentials.map((credential) => ({
                             ...credential,
-                            id: decodeBase64url(credential.id),
+                            id: base64url.decode(credential.id, true),
                         })),
                         authenticatorSelection: {
                             requireResidentKey: true,
@@ -103,8 +104,8 @@
 
                     console.log("Created credential: ", credential);
 
-                    document.getElementById("clientDataJSON").value = encodeBase64url(credential.response.clientDataJSON);
-                    document.getElementById("attestationObject").value = encodeBase64url(credential.response.attestationObject);
+                    document.getElementById("clientDataJSON").value = base64url.encode(credential.response.clientDataJSON);
+                    document.getElementById("attestationObject").value = base64url.encode(credential.response.attestationObject);
                     document.getElementById("clientExtensions").value = JSON.stringify(credential.getClientExtensionResults());
                     document.getElementById("signup-form").submit();
                 } catch (error) {

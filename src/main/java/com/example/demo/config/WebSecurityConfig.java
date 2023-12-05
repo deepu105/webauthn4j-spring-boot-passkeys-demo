@@ -90,6 +90,7 @@ public class WebSecurityConfig {
             .name("WebAuthn4J Passkeys Demo")
             .and()
             .pubKeyCredParams(
+                // supported algorithms for cryptography
                 new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.ES256),
                 new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.RS256)
             )
