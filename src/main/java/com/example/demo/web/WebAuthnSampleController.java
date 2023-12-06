@@ -20,8 +20,6 @@ import com.webauthn4j.springframework.security.WebAuthnRegistrationRequestValida
 import com.webauthn4j.springframework.security.WebAuthnRegistrationRequestValidator;
 import com.webauthn4j.springframework.security.authenticator.WebAuthnAuthenticatorImpl;
 import com.webauthn4j.springframework.security.authenticator.WebAuthnAuthenticatorManager;
-import com.webauthn4j.springframework.security.challenge.ChallengeRepository;
-import com.webauthn4j.springframework.security.exception.PrincipalNotFoundException;
 import com.webauthn4j.springframework.security.exception.WebAuthnAuthenticationException;
 import com.webauthn4j.util.Base64UrlUtil;
 import com.webauthn4j.util.UUIDUtil;
@@ -31,8 +29,6 @@ import jakarta.validation.Valid;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationTrustResolver;
-import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -42,10 +38,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Login controller
@@ -65,18 +58,6 @@ public class WebAuthnSampleController {
 
     @Autowired
     private WebAuthnRegistrationRequestValidator registrationRequestValidator;
-
-    @Autowired
-    private ChallengeRepository challengeRepository;
-
-    private AuthenticationTrustResolver authenticationTrustResolver = new AuthenticationTrustResolverImpl();
-
-    @ModelAttribute
-    public void addAttributes(Model model, HttpServletRequest request) {
-        var challenge = challengeRepository.loadOrGenerateChallenge(request);
-        model.addAttribute("webAuthnChallenge", Base64UrlUtil.encodeToString(challenge.getValue()));
-        model.addAttribute("webAuthnCredentialIds", getCredentialIds());
-    }
 
     @GetMapping(value = "/")
     public String index(Model model) {
@@ -149,22 +130,4 @@ public class WebAuthnSampleController {
         model.addAttribute("successMessage", "User registration successful. Please login.");
         return VIEW_LOGIN;
     }
-
-    private List<String> getCredentialIds() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var principal = authentication.getPrincipal();
-        if (principal == null || authenticationTrustResolver.isAnonymous(authentication)) {
-            return Collections.emptyList();
-        } else {
-            try {
-                var webAuthnAuthenticators = webAuthnAuthenticatorManager.loadAuthenticatorsByUserPrincipal(principal);
-                return webAuthnAuthenticators.stream()
-                    .map(webAuthnAuthenticator -> Base64UrlUtil.encodeToString(webAuthnAuthenticator.getAttestedCredentialData().getCredentialId()))
-                    .collect(Collectors.toList());
-            } catch (PrincipalNotFoundException e) {
-                return Collections.emptyList();
-            }
-        }
-    }
-
 }
