@@ -22,7 +22,7 @@
             <p>If you don't have an account, create one now</p>
             <input id="userHandle" name="userHandle" th:field="*{userHandle}" type="hidden" />
             <div class="form-floating">
-                <input type="email" class="form-control" id="username" th:field="*{username}"  placeholder="name@example.com" required>
+                <input type="email" class="form-control" id="username" th:field="*{username}" placeholder="name@example.com" required>
                 <label for="username">Email address</label>
             </div>
             <button class="btn btn-success w-100 py-2" type="submit">Register a new passkey</button>
@@ -32,8 +32,8 @@
             <input id="clientExtensions" name="clientExtensions" th:field="*{clientExtensions}" type="hidden" />
         </form>
     </main>
-    <script src="https://unpkg.com/base64url-arraybuffer"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Base64URL-ArrayBuffer/1.1.0/main.umd.min.js"
+        integrity="sha512-eOUPAFNjvf5Bf4cyN0um8VXRwLEL4f5orlTmtors/PQkvWa32167uYO8k0TomwPqpewK1FflUU+fTFpbjmeSbQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         // Availability of `window.PublicKeyCredential` means WebAuthn is usable.
         if (!window.PublicKeyCredential) {
